@@ -18,9 +18,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
         dim1 = 320;
         dim2 = 384;
         disp('Loading mesh:')
-        load('../../Results/mesh.mat');
+        load('../../Data/mesh.mat');
         disp('Loading observations:')
-        load('../../Results/allObs.mat');
+        load('../../Data/allObs.mat');
         
     %% Stationary model
         %% Fit all data
