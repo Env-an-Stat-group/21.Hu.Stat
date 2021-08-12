@@ -102,10 +102,10 @@ classdef Optimizer < handle
            %    Add wind covariate
            
             % Load zonal wind
-            [lon, lat, UBOT] = ProcessWind(1:1, '../../UBOT/', 'cam.h0.UBOT', 'UBOT');
+            load('../Data/UBOT.mat');
 
             % Load meridional wind
-            [~, ~, VBOT] = ProcessWind(1:1, '../../VBOT/', 'cam.h0.VBOT', 'VBOT');
+            load('../Data/VBOT.mat');
 
             % Average over time
             UBOT = mean(UBOT(:,:,:,1), 3);
@@ -209,11 +209,11 @@ classdef Optimizer < handle
            %    Add wind covariate
            
             % Load zonal wind
-            [lon, lat, UBOT] = ProcessWind(1:1, '../../UBOT/', 'cam.h0.UBOT', 'UBOT');
+            load('../Data/UBOT.mat');
 
             % Load meridional wind
-            [~, ~, VBOT] = ProcessWind(1:1, '../../VBOT/', 'cam.h0.VBOT', 'VBOT');
-            
+            load('../Data/VBOT.mat');
+
             % Average over time
             UBOT = mean(UBOT(:,:,:,1), 3);
             VBOT = mean(VBOT(:,:,:,1), 3);
@@ -272,7 +272,7 @@ classdef Optimizer < handle
            % ADDDISTANCEFROMBORDER
            %    Add distance from border as covariate
             %% Get distances from continent borders
-            S = shaperead('../../Data/continents/continent');
+            S = shaperead('../Data/continents/continent');
             X1 = S(1).X;
             Y1 = S(1).Y;
             for i = 2:7
@@ -874,7 +874,9 @@ classdef Optimizer < handle
 
             % Make mapping to wind locations from triangles
             [XX, YY] = meshgrid(lonW, latW);
-            VV = griddata(lonC2, latC2, full(rhoVec2), XX, YY);
+            VV = grid
+	    
+	    (lonC2, latC2, full(rhoVec2), XX, YY);
             figure;scatter(XX(:), YY(:), 8, VV(:))
 
             % Extract values
