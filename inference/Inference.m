@@ -53,72 +53,7 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
             toc;
             
-    %% Fit wind-based models
-        %% Three extra parameters
-            disp('Fitting wind model. All data:');
-            sTime = tic;
-
-            % Create SPDE model
-            tWindow = 1:size(allObs,2);
-            tensorParOld = 1;
-            OptWStat = SPDE.Optimizer.makeStationaryModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld);
-            OptWStat.addWind(1);
-
-            % Load starting value
-            x0 = [xWStat1(1:4); xWStat1(5)*[1; 1; 1];xWStat1(6:7)];
-
-            % Fit model
-            fitWStat = true;
-            if(fitWStat)
-                % Set optimization function
-                fun = @(par)(OptWStat.logLikelihood(par, [], 1e-4, [], 1, sqrt(eps), 0));
-
-                %% Optimize
-                [xWStat3, valWS3] = fminunc(fun, x0, optimset('MaxIter', 2000, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
-
-                % Store result
-                tFitWStat3 = toc(sTime);
-                save('../../Results/spatial_Wstat3_single.mat', 'xWStat3', 'tFitWStat3');
-            else
-                load('../../Results/spatial_Wstat3_single.mat');
-            end
-
-            toc;
-            
-        %% Spatially varying range scaling 3 par
-            disp('Fitting wind model; more complex. All data:');
-            sTime = tic;
-
-            % Create SPDE model
-            tWindow = 1:size(allObs,2);
-            tensorParOld = 1;
-            OptWNStat = SPDE.Optimizer.makeNonStatModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld, [4 0 4]);
-            OptWNStat.addWind(1);
-
-            % Load starting value
-            x0 = rand(34, 1)*0.1-0.05;
-%             x0(1:30) = xWNStat1(1:30);
-%             x0(31:32) = xWNStat1(30);
-%             x0(33:34) = xWNStat1(31:32);
-            
-            % Fit model
-            fitWNStat = true;
-            if(fitWNStat)
-                % Set optimization function
-                fun = @(par)(OptWNStat.logLikelihood(par, [], 1e-4, [], 1, sqrt(eps), 0));
-
-                %% Optimize
-                [xWNStat3, valWNS3] = fminunc(fun, x0, optimset('MaxIter', 400, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
-
-                % Store result
-                tFitWNStat3 = toc(sTime);
-                save('../../Results/spatial_WNstat3_single.mat', 'xWNStat3', 'tFitWNStat3');
-            else
-                load('../../Results/spatial_WNstat3_single.mat');
-            end
-
-            toc;
-            
+                        
      %% Non-stationary model
         %% All data
             disp('Fitting non-stationary model. All data')
@@ -153,6 +88,71 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
                 load('../../Results/spatial_nstat_single.mat');
             end
             toc(sTime);
+            
+    %% Fit wind-based models
+        %% Three extra parameters
+            disp('Fitting wind model. All data:');
+            sTime = tic;
+
+            % Create SPDE model
+            tWindow = 1:size(allObs,2);
+            tensorParOld = 1;
+            OptWStat = SPDE.Optimizer.makeStationaryModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld);
+            OptWStat.addWind(1);
+
+            % Load starting value
+            x0 = rand(7, 1)*0.1-0.05;
+
+            % Fit model
+            fitWStat = true;
+            if(fitWStat)
+                % Set optimization function
+                fun = @(par)(OptWStat.logLikelihood(par, [], 1e-4, [], 1, sqrt(eps), 0));
+
+                %% Optimize
+                [xWStat3, valWS3] = fminunc(fun, x0, optimset('MaxIter', 2000, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
+
+                % Store result
+                tFitWStat3 = toc(sTime);
+                save('../../Results/spatial_Wstat3_single.mat', 'xWStat3', 'tFitWStat3');
+            else
+                load('../../Results/spatial_Wstat3_single.mat');
+            end
+
+            toc;
+            
+        %% Spatially varying range scaling 3 par
+            disp('Fitting wind model; more complex. All data:');
+            sTime = tic;
+
+            % Create SPDE model
+            tWindow = 1:size(allObs,2);
+            tensorParOld = 1;
+            OptWNStat = SPDE.Optimizer.makeNonStatModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld, [4 0 4]);
+            OptWNStat.addWind(1);
+
+            % Load starting value
+            x0 = rand(81, 1)*0.1-0.05;
+            x0(1:76) = xNStat(1:76);
+            x0(80:81) = xNStat(77:78);
+            
+            % Fit model
+            fitWNStat = true;
+            if(fitWNStat)
+                % Set optimization function
+                fun = @(par)(OptWNStat.logLikelihood(par, [], 1e-4, [], 1, sqrt(eps), 0));
+
+                %% Optimize
+                [xWNStat3, valWNS3] = fminunc(fun, x0, optimset('MaxIter', 400, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
+
+                % Store result
+                tFitWNStat3 = toc(sTime);
+                save('../../Results/spatial_WNstat3_single.mat', 'xWNStat3', 'tFitWNStat3');
+            else
+                load('../../Results/spatial_WNstat3_single.mat');
+            end
+
+            toc;
 
         %% Add neural net wind
             %% Spatially varying range harmonics and Neural Network + harmonics
