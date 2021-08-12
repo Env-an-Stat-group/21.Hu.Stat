@@ -1,5 +1,5 @@
 # 21.Hu.Stat.unpublished
-Public code for "A Locally Diffusive Model with Neural Network Deformations for Global Ocean Temperature"
+Public code for "A Stochastic Locally Diffusive Model with Neural Network-Based Deformations for Global Sea Surface Temperature"
 
 **Inference/Inference.m**<br />
 This code runs the 5 models listed in the table 1.
