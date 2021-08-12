@@ -8,128 +8,20 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
 %% Setup
     % Number of workers
-    parpool(10);
+    parpool(24);
     
     % General code
     addpath('../Shared')
   
-%% Load data
+%% Load sample data
     % Create datasubset for training stochastic generator
-    disp('Processing data:');
-    numObs = 5;
-    runVec = 1:numObs;
-    [lon, lat, dataSubset] = ProcessData(runVec, '../../SST/', 'pop.h.SST');
-    save('../../Results/trainingData.mat', 'dataSubset', 'lon', 'lat', 'numObs', '-v7.3');
-
-%% Estimate temporal structure
-    disp('Temporal structure:');
-
-    %% Fit VAR(p)
-        disp('Fitting VAR(p):')
-        pOrder = 6;
-        [Phi, Sig, parMat, optRes] = FitVARpprofile_RLIK(dataSubset, pOrder);
-
-        % Save results
-        save('../../Results/temp_VAR6fit.mat', 'pOrder', 'Phi', 'Sig', 'parMat', 'optRes', '-v7.3');
+        dim1 = 320;
+        dim2 = 384;
+        disp('Loading mesh:')
+        load('../../Results/mesh.mat');
+        disp('Loading observations:')
+        load('../../Results/allObs.mat');
         
-    %% Estimate mean structure
-        % Full estimate
-        muFull = mean(dataSubset, 4);
-
-        % Time index
-        tVec = (0:1139)'/1140;
-        mVec = 95*tVec;
-
-        % Seasonal basis
-        %sBasis = [ones(1140, 1), cos(2*pi*mVec), sin(2*pi*mVec), cos(2*2*pi*mVec), sin(2*2*pi*mVec), cos(3*2*pi*mVec), sin(3*2*pi*mVec)];
-        sBasis = zeros(1140, 12);
-        for i = 1:12
-            sBasis(i:12:1140, i) = 1;
-        end
-
-        % Yearly basis
-        yBasis = [ones(1140,1), tVec, tVec.^2, tVec.^3];
-
-        % Full basis
-        Hb = ones(1140, size(sBasis,2)*size(yBasis,2));
-        for i = 1:size(sBasis,2)
-            for j = 1:size(yBasis,2)
-                Hb(:,(i-1)*size(yBasis,2)+j) = sBasis(:,i).*yBasis(:,j);
-            end
-        end
-
-        % Least square estimates
-        dim1 = size(dataSubset, 1);
-        dim2 = size(dataSubset, 2);
-        muTmp = reshape(muFull, [dim1*dim2, 1140])';
-        betaTmp = (Hb'*Hb)\(Hb'*muTmp);
-        betaAll = reshape(betaTmp', [dim1 dim2 size(Hb,2)]);
-        muLS = reshape((Hb*betaTmp)', [dim1 dim2, 1140]);
-
-        % Proper estimates
-        betaProp = zeros(dim1, dim2, size(Hb,2));
-        parfor i = 1:dim1
-            for j = 1:dim2
-                if(sum(isnan(parMat(i,j,:))) > 0)
-                    continue;
-                end
-                [~, ~, ~, Qtmp] = ARp_stat_RLIK(parMat(i,j,:), zeros(1140,2), pOrder);
-                betaProp(i,j,:) = (Hb'*Qtmp*Hb)\(Hb'*Qtmp*reshape(muFull(i,j,:), [1140 1]));
-            end
-        end
-        betaTmp = reshape(betaProp, [dim1*dim2, 48])';
-        muWLS = reshape((Hb*betaTmp)', [dim1 dim2, 1140]);
-
-        save('../../Results/temp_mean.mat', 'muLS', 'muWLS', 'betaAll', 'betaTmp');
-                                           
-    %% Prepare spatial residuals for estimation of spatial structure
-        % Detrend
-        disp('De-trending:');
-        dataD = DeTrendP(dataSubset, muWLS, Phi, Sig, pOrder);
-        save('../../Results/deTrendTrainData.mat', 'dataD', 'lon', 'lat', '-v7.3');
-    
-%% Estimate spatial covariance structure
-    %% Calculate mesh and prepare data
-        disp('Making mesh:')
-        tic;
-        % make grid of coordinates
-        %[gLat, gLon] = meshgrid(lat, lon);
-        gLat = lat;
-        gLon = lon;
-
-        % Convert to Cartesian coordinates on unit sphere
-        [x, y, z] = sph2cart(gLon(:)*pi/180, gLat(:)*pi/180, 1);
-        loc = [x y z];
-
-        % Make mesh on sphere
-        [vLoc, tt, tv] = SPDE.MeshGenerator.generateMesh(loc, 'globe', 10, 'maxEdge1', 0.07, 'maxEdge2', 0.07, 'cutOff', 0.07);
-        save('../../Results/mesh.mat', 'vLoc', 'tt', 'tv', 'gLat', 'gLon', 'loc');
-        toc;
-        
-        % Data
-        allObs = reshape(dataD, [dim1*dim2, (1140-pOrder)*5]);
-        monthVV = 6+[(1:(1140-pOrder))', (1:(1140-pOrder))', (1:(1140-pOrder))', (1:(1140-pOrder))', (1:(1140-pOrder))'];
-        monthVV = reshape(monthVV, [(1140-pOrder)*5, 1]);
-        yearVV = repmat((1:95), 12, 1);
-        yearVV = yearVV((pOrder+1):end);
-        yearVV = repmat(yearVV, 1,5);
-        
-        % Permute
-        p = kron((1:(1140-pOrder))', ones([5 1])) + kron(ones([1140-pOrder 1]), (1:(1140-pOrder):4553)'-1);
-        allObs = allObs(:, p);
-        monthVV = monthVV(p);
-        monthVV = 1+ mod(monthVV-1, 12);
-        yearVV = yearVV(p);
-        
-        % Remove unobserved locations
-        nanVec = sum(isnan(allObs), 2);
-        isObs  = nanVec == 0;
-        allObs = allObs(isObs, :);
-        loc = loc(isObs, :);
-        
-        save('../../Results/allObs.mat', 'allObs', 'loc', '-v7.3');
-
-    
     %% Stationary model
         %% Fit all data
              disp('Fitting stationary model. All data:');
@@ -200,7 +92,7 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
             % Create SPDE model
             tWindow = 1:size(allObs,2);
             tensorParOld = 1;
-            OptWNStat = SPDE.Optimizer.makeNonStatModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld, [4 0 0]);
+            OptWNStat = SPDE.Optimizer.makeNonStatModel(vLoc, tt, tv, loc, allObs(:, tWindow), 0, tensorParOld, [4 0 4]);
             OptWNStat.addWind(1);
 
             % Load starting value
@@ -216,7 +108,7 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
                 fun = @(par)(OptWNStat.logLikelihood(par, [], 1e-4, [], 1, sqrt(eps), 0));
 
                 %% Optimize
-                [xWNStat3, valWNS3] = fminunc(fun, x0, optimset('MaxIter', 2000, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
+                [xWNStat3, valWNS3] = fminunc(fun, x0, optimset('MaxIter', 400, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off'));
 
                 % Store result
                 tFitWNStat3 = toc(sTime);
