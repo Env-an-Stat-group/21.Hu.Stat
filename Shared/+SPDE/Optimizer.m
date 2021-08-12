@@ -107,10 +107,6 @@ classdef Optimizer < handle
             % Load meridional wind
             load('../Data/VBOT.mat');
 
-            % Average over time
-            UBOT = mean(UBOT(:,:,:,1), 3);
-            VBOT = mean(VBOT(:,:,:,1), 3);
-
             % Expand longitude and latitude to a mesh
             [gLat, gLon] = meshgrid(lat, lon);
             % Fix edge
