@@ -11,7 +11,7 @@ classdef PrecisionMaker < handle
 		meshTV;
 		meshVLoc;
 		meshTT;
-        meshVT;
+        	meshVT;
 		meshArea;
 		meshCLoc;
 		meshELoc;
