@@ -18,9 +18,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
         dim1 = 320;
         dim2 = 384;
         disp('Loading mesh:')
-        load('../../Data/mesh.mat');
+        load('../Data/mesh.mat');
         disp('Loading observations:')
-        load('../../Data/allObs.mat');
+        load('../Data/allObs.mat');
         
     %% Stationary model
         %% Fit all data
@@ -46,9 +46,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
                 % Store result
                 tFitStat = toc(sTime);
-                save('../../Results/spatial_stat_single.mat', 'xStat', 'tFitStat');
+                save('../Results/spatial_stat_single.mat', 'xStat', 'tFitStat');
             else
-                load('../../Results/spatial_stat_single.mat');
+                load('../Results/spatial_stat_single.mat');
             end
 
             toc;
@@ -83,9 +83,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
                 [xNStat, valNS] = fminunc(fun, x0, optimset('MaxIter', 600, 'Display', 'iter-detailed', 'GradObj', 'on', 'LargeScale', 'off', 'TolFun', 1e-5));
 
                 tFitNStat = toc(sTime);
-                save('../../Results/spatial_nstat_single.mat', 'xNStat', 'tFitNStat');
+                save('../Results/spatial_nstat_single.mat', 'xNStat', 'tFitNStat');
             else
-                load('../../Results/spatial_nstat_single.mat');
+                load('../Results/spatial_nstat_single.mat');
             end
             toc(sTime);
             
@@ -114,9 +114,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
                 % Store result
                 tFitWStat3 = toc(sTime);
-                save('../../Results/spatial_Wstat3_single.mat', 'xWStat3', 'tFitWStat3');
+                save('../Results/spatial_Wstat3_single.mat', 'xWStat3', 'tFitWStat3');
             else
-                load('../../Results/spatial_Wstat3_single.mat');
+                load('../Results/spatial_Wstat3_single.mat');
             end
 
             toc;
@@ -147,9 +147,9 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
                 % Store result
                 tFitWNStat3 = toc(sTime);
-                save('../../Results/spatial_WNstat3_single.mat', 'xWNStat3', 'tFitWNStat3');
+                save('../Results/spatial_WNstat3_single.mat', 'xWNStat3', 'tFitWNStat3');
             else
-                load('../../Results/spatial_WNstat3_single.mat');
+                load('../Results/spatial_WNstat3_single.mat');
             end
 
             toc;
@@ -158,7 +158,7 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
             %% Spatially varying range harmonics and Neural Network + harmonics
                 disp('Fitting NN model');
                 disp('Load estimators from Non-stat model as starting points')
-                load('../../Results/spatial_nstat_single.mat','xNStat')
+                load('../Results/spatial_nstat_single.mat','xNStat')
                 sTime = tic;
 
                 % Create SPDE model
@@ -184,8 +184,8 @@ setenv('LD_LIBRARY_PATH', '../Shared/:/opt/crc/g/gsl/2.5/gcc/lib/:/afs/crc.nd.ed
 
                     % Store result
                     tFitWNStat2 = toc(sTime);
-                    save('../../Results/spatial_NNhm.mat', 'xNN','valNN','tFitWNStat2');
+                    save('../Results/spatial_NNhm.mat', 'xNN','valNN','tFitWNStat2');
                 else
-                    load('../../Results/spatial_NNhm.mat', 'xNN','valNN','tFitWNStat2');
+                    load('../Results/spatial_NNhm.mat', 'xNN','valNN','tFitWNStat2');
                 end
                 toc(sTime)
