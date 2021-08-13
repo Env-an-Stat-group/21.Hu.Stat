@@ -24,7 +24,7 @@ classdef Optimizer < handle
             
             %% Add distances from border
                 % Get distances from continent borders
-                S = shaperead('../../Data/continents/continent');
+                S = shaperead('../Data/continents/continent');
                 X1 = S(1).X;
                 Y1 = S(1).Y;
                 for i = 2:7
@@ -209,10 +209,6 @@ classdef Optimizer < handle
 
             % Load meridional wind
             load('../Data/VBOT.mat');
-
-            % Average over time
-            UBOT = mean(UBOT(:,:,:,1), 3);
-            VBOT = mean(VBOT(:,:,:,1), 3);
 
             % Expand longitude and latitude to a mesh
             [gLat, gLon] = meshgrid(lat, lon);
@@ -840,146 +836,6 @@ classdef Optimizer < handle
 
 			% Derivative of quadratic forms
 			val = val - 0.5*(y-S*muIy)'*QnDer*(y-S*muIy);
-        end
-        
-        function [res] = addNeuralNetRho(obj, xNStat)
-            % Extract estimated rho surface
-            Drho = obj.QMaker.makeDRho2(xNStat(obj.QMaker.idxRho), 0);
-            rhoVec = log(full(diag(Drho)));
-            [az, el, ~] = cart2sph(obj.QMaker.meshCLoc(:,1), obj.QMaker.meshCLoc(:,2), obj.QMaker.meshCLoc(:, 3));
-            lonC = az*360/(2*pi);
-            latC = el*360/(2*pi);
-
-            % Load zonal wind
-            [lonW, latW, UBOT] = ProcessWind(1:1, '../../UBOT/', 'cam.h0.UBOT', 'UBOT');
-            UBOT = mean(UBOT, 3)';
-            UBOT = [UBOT(:,145:end), UBOT(:,1:144)];
-            lonW = [lonW(145:end)-360; lonW(1:144)]; 
-
-            % Load meridional wind
-            [~, ~, VBOT] = ProcessWind(1:1, '../../VBOT/', 'cam.h0.VBOT', 'VBOT');
-            VBOT = mean(VBOT, 3)';
-            VBOT = [VBOT(:,145:end), VBOT(:,1:144)];
-
-            % Avoid boundary effects
-            idxR = lonC > 160;
-            idxL = lonC < -160;
-            lonC2 = [lonC(idxR)-360; lonC; lonC(idxL)+360];
-            latC2 = [latC(idxR); latC; latC(idxL)];
-            rhoVec2 = [rhoVec(idxR); rhoVec; rhoVec(idxL)];
-
-            % Make mapping to wind locations from triangles
-            [XX, YY] = meshgrid(lonW, latW);
-            VV = grid
-	    
-	    (lonC2, latC2, full(rhoVec2), XX, YY);
-            figure;scatter(XX(:), YY(:), 8, VV(:))
-
-            % Extract values
-            lonVal = XX(:);
-            latVal = YY(:);
-            vVal   = VV(:);
-
-            % Determine land and sea
-            [x, y, z] = sph2cart(lonVal*pi/180, latVal(:)*pi/180, 1);
-            loc = [x y z];
-            
-            % Create new SPDE model (not very effective, but I want to see)
-            vLoc = obj.QMaker.meshVLoc;
-            tt   = obj.QMaker.meshTT;
-            tv   = obj.QMaker.meshTV;
-            OptTmp = SPDE.Optimizer.makeNonStatModel(vLoc, tt, tv, loc, x, 0, 1);
-            [iVec,jVec,~] = find(OptTmp.A);
-            [~,Ivec] = sort(iVec);
-            idxSea = (OptTmp.lMat(jVec(Ivec)) == 0);
-            scatter(lonVal(idxSea), latVal(idxSea), 16, vVal(idxSea), 'filled');
-            colorbar;
-
-            % Create observation vect
-            X = zeros(288*192, 50);
-            Y = zeros(288*192, 1);
-            for i = 1:288
-                for j = 1:192
-                    cRow = 192*(i-1)+j;
-                    if(i < 3)
-                        idxC = [(288-2+i):288, 1:(i+2)];
-                    elseif(i > 286)
-                        idxC = [(i-2):288, 1:(i-286)];
-                    else
-                        idxC = (i-2):(i+2);
-                    end
-                    if(j < 3)
-                        idxR = 1:5;
-                    elseif(j > 190)
-                        idxR = 188:192;
-                    else
-                        idxR = (j-2):(j+2);
-                    end
-
-                    X(cRow, :) = [reshape(UBOT(idxR, idxC), [1, 25]), reshape(VBOT(idxR, idxC), [1, 25])];
-                    Y(cRow) = VV(j,i);
-                end
-            end
-
-            % Only consider sea. Don't train on pole areas.
-            Xtrain = X(idxSea,:);
-            Ytrain = Y(idxSea,:);
-            lonTrain = lonVal(idxSea);
-            latTrain = latVal(idxSea);
-            Xtest = X;
-
-            % Fit neural net
-            Yinput = Ytrain';
-            Xinput = Xtrain';
-            NN_obj = fitnet(10);
-            NN_data = train(NN_obj, Xinput, Yinput);
-            HMM = NN_data(Xtest')';
-
-            % The answer
-            valFinal = reshape(HMM, [192 288]);
-
-            % Compare
-            cMin = min(min(valFinal), min(Y(idxSea)));
-            cMax = max(max(valFinal), max(Y(idxSea)));
-            figure;
-            subplot(2, 2, 3)
-            valMat = reshape(Y, [192 288]);
-            valMat(~idxSea) = NaN;
-            imagesc(valMat);axis xy; colorbar;
-            title('Estimated log(rho)');
-            subplot(2,2,4);
-            valMat = reshape(valFinal, [192 288]);
-            valMat(~idxSea) = NaN;
-            imagesc(valMat);axis xy; colorbar;
-            title('Neural net');
-            subplot(2,2,1);
-            valMat = reshape(X(:, 5+5+3), [192 288]);
-            valMat(~idxSea) = NaN;
-            imagesc(valMat); axis xy
-            colorbar;
-            title('East-wind');
-            subplot(2,2,2);
-            valMat = reshape(X(:, 25+5+5+3), [192 288]);
-            valMat(~idxSea) = NaN;
-            imagesc(valMat); axis xy;
-            colorbar;
-            title('North-wind');
-
-            % Interpolate to required points
-            newBasisFunction = interp2([XX, XX(:,1:3)+360], [YY, YY(:,1:3)], [valFinal, valFinal(:,1:3)], lonC, latC);
-
-            % Set to zero on land
-            newBasisFunction(OptTmp.lMat == 1) = 0;
-            
-            % Add basis function
-            currMax = max([obj.QMaker.idxRho, obj.QMaker.idxSigma, obj.QMaker.idxDVx, obj.QMaker.idxDVy, obj.QMaker.idxDVz]);
-            obj.QMaker.basisRho = [obj.QMaker.basisRho, newBasisFunction];
-            obj.QMaker.idxRho = [obj.QMaker.idxRho, currMax+1];
-
-            % Visualize
-            scatter(lonC, latC, 12, newBasisFunction, 'filled');
-
-            res = obj;
         end
 	end
 
