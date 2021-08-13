@@ -1,7 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GetControlRun.m                                                         %
 %    Read control run                                                     %
-% Author: Geir-Arne Fuglstad <geirarne.fuglstad@gmail.com> (2018)         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [lon, lat, dataV, dataJan] = GetControlRun(refS, refE, fold)
