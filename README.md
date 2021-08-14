@@ -8,4 +8,4 @@ This code runs the 5 models listed in the table 1.
 This folder contains functions and packages used in the inference.m.
 
 **Data**<br />
-This folder contains temperature and wind sample data.
+This folder contains sample data for running 5 models.
