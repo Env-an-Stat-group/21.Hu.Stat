@@ -1,4 +1,4 @@
-# 21.Hu.Stat.unpublished
+# 21.Hu.Stat
 Public code for "A Stochastic Locally Diffusive Model with Neural Network-Based Deformations for Global Sea Surface Temperature"
 
 **Inference/Inference.m**<br />
